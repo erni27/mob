@@ -20,8 +20,12 @@ type RequestHandler[T any, U any] interface {
 	Handle(context.Context, T) (U, error)
 }
 
-// RegisterRequestHandler adds a given handler to the global registry.
+// RegisterRequestHandler adds a given request handler to the global registry.
 // Returns nil if the handler added successfully, an error otherwise.
+//
+// An only one handler for a given request / response pair can be registered.
+// If support for multiple handlers for same request / response pairs is needed, introduce type aliasing
+// to avoid handlers' collision.
 func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
 	if !isValid(hn) {
 		return ErrInvalidHandler
@@ -41,7 +45,7 @@ func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
 
 // Send sends a given request T to an appropriate handler and returns a response U.
 //
-// If the handler does not exist in the global registry, ErrHandlerNotFound is returned.
+// If the appropriate handler does not exist in the global registry, ErrHandlerNotFound is returned.
 func Send[T any, U any](ctx context.Context, req T) (U, error) {
 	var res U
 	reqt := reflect.TypeOf(req)

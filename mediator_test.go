@@ -19,25 +19,25 @@ type DummyResponse1 struct {
 	Time   time.Time
 }
 
-type DummyHandler1 struct {
+type DummyRequestHandler1 struct {
 	handleFunc func(context.Context, DummyRequest1) (DummyResponse1, error)
 }
 
-func (DummyHandler1) Name() string {
+func (DummyRequestHandler1) Name() string {
 	return "DummyHandler1"
 }
 
-func (h DummyHandler1) Handle(ctx context.Context, req DummyRequest1) (DummyResponse1, error) {
+func (h DummyRequestHandler1) Handle(ctx context.Context, req DummyRequest1) (DummyResponse1, error) {
 	return h.handleFunc(ctx, req)
 }
 
-type DummyDuplicate1 struct{}
+type DummyDuplicateRequestHandler1 struct{}
 
-func (*DummyDuplicate1) Name() string {
+func (*DummyDuplicateRequestHandler1) Name() string {
 	return "DummyDuplicate1"
 }
 
-func (*DummyDuplicate1) Handle(_ context.Context, _ DummyRequest1) (DummyResponse1, error) {
+func (*DummyDuplicateRequestHandler1) Handle(_ context.Context, _ DummyRequest1) (DummyResponse1, error) {
 	return DummyResponse1{}, nil
 }
 
@@ -53,38 +53,38 @@ type DummyResponse2 struct {
 	Float  float32
 }
 
-type DummyHandler2 struct{}
+type DummyRequestHandler2 struct{}
 
-func (*DummyHandler2) Name() string {
+func (*DummyRequestHandler2) Name() string {
 	return "DummyHandler2"
 }
 
-func (*DummyHandler2) Handle(_ context.Context, _ DummyRequest2) (DummyResponse2, error) {
+func (*DummyRequestHandler2) Handle(_ context.Context, _ DummyRequest2) (DummyResponse2, error) {
 	return DummyResponse2{}, nil
 }
 
-type DummyHandler3 struct{}
+type DummyRequestHandler3 struct{}
 
-func (*DummyHandler3) Name() string {
+func (*DummyRequestHandler3) Name() string {
 	return "DummyHandler3"
 }
 
-func (*DummyHandler3) Handle(_ context.Context, _ DummyRequest1) (DummyResponse2, error) {
+func (*DummyRequestHandler3) Handle(_ context.Context, _ DummyRequest1) (DummyResponse2, error) {
 	return DummyResponse2{}, nil
 }
 
-type DummyHandler4 struct{}
+type DummyRequestHandler4 struct{}
 
-func (DummyHandler4) Name() string {
+func (DummyRequestHandler4) Name() string {
 	return "DummyHandler4"
 }
 
-func (DummyHandler4) Handle(_ context.Context, _ DummyRequest2) (DummyResponse1, error) {
+func (DummyRequestHandler4) Handle(_ context.Context, _ DummyRequest2) (DummyResponse1, error) {
 	return DummyResponse1{}, nil
 }
 
 func TestRegisterRequestHandler_DuplicateHandler(t *testing.T) {
-	defer clean()
+	defer clearRequestHandlers()
 	tests := []struct {
 		name string
 		arg  RequestHandler[DummyRequest1, DummyResponse1]
@@ -92,16 +92,16 @@ func TestRegisterRequestHandler_DuplicateHandler(t *testing.T) {
 	}{
 		{
 			name: "dummy handler",
-			arg:  DummyHandler1{},
+			arg:  DummyRequestHandler1{},
 			want: ErrDuplicateHandler,
 		},
 		{
 			name: "dummy duplicate",
-			arg:  &DummyDuplicate1{},
+			arg:  &DummyDuplicateRequestHandler1{},
 			want: ErrDuplicateHandler,
 		},
 	}
-	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](DummyHandler1{}); err != nil {
+	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](DummyRequestHandler1{}); err != nil {
 		t.Fatalf("register first handler: %v", err)
 	}
 	for _, tt := range tests {
@@ -114,7 +114,7 @@ func TestRegisterRequestHandler_DuplicateHandler(t *testing.T) {
 }
 
 func TestRegisterRequestHandler_InvalidHandler(t *testing.T) {
-	defer clean()
+	defer clearRequestHandlers()
 	tests := []struct {
 		name string
 		arg  RequestHandler[DummyRequest1, DummyResponse1]
@@ -127,7 +127,7 @@ func TestRegisterRequestHandler_InvalidHandler(t *testing.T) {
 		},
 		{
 			name: "nil value",
-			arg:  (*DummyDuplicate1)(nil),
+			arg:  (*DummyDuplicateRequestHandler1)(nil),
 			want: ErrInvalidHandler,
 		},
 	}
@@ -141,31 +141,33 @@ func TestRegisterRequestHandler_InvalidHandler(t *testing.T) {
 }
 
 func TestRegisterRequestHandler(t *testing.T) {
-	defer clean()
+	defer clearRequestHandlers()
 	t.Run("dummy handler 1", func(t *testing.T) {
-		if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](DummyHandler1{}); err != nil {
+		if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](DummyRequestHandler1{}); err != nil {
 			t.Errorf("want success, got error %v", err)
 		}
 	})
 	t.Run("dummy handler 2", func(t *testing.T) {
-		if err := RegisterRequestHandler[DummyRequest2, DummyResponse2](&DummyHandler2{}); err != nil {
+		if err := RegisterRequestHandler[DummyRequest2, DummyResponse2](&DummyRequestHandler2{}); err != nil {
 			t.Errorf("want success, got error %v", err)
 		}
 	})
 	t.Run("dummy handler 3", func(t *testing.T) {
-		if err := RegisterRequestHandler[DummyRequest1, DummyResponse2](&DummyHandler3{}); err != nil {
+		if err := RegisterRequestHandler[DummyRequest1, DummyResponse2](&DummyRequestHandler3{}); err != nil {
 			t.Errorf("want success, got error %v", err)
 		}
 	})
 	t.Run("dummy handler 4", func(t *testing.T) {
-		if err := RegisterRequestHandler[DummyRequest2, DummyResponse1](&DummyHandler4{}); err != nil {
+		if err := RegisterRequestHandler[DummyRequest2, DummyResponse1](&DummyRequestHandler4{}); err != nil {
 			t.Errorf("want success, got error %v", err)
 		}
 	})
 }
 
-func clean() {
-	rhandlers = map[reqHnKey]interface{}{}
+func TestSend_HandlerNotFound(t *testing.T) {
+	if _, err := Send[DummyRequest1, DummyResponse1](context.Background(), DummyRequest1{}); err != ErrHandlerNotFound {
+		t.Errorf("want error %v, got %v", ErrHandlerNotFound, err)
+	}
 }
 
 func TestSend(t *testing.T) {
@@ -209,8 +211,8 @@ func TestSend(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer clean()
-			var handler RequestHandler[DummyRequest1, DummyResponse1] = DummyHandler1{handleFunc: tt.handle}
+			defer clearRequestHandlers()
+			var handler RequestHandler[DummyRequest1, DummyResponse1] = DummyRequestHandler1{handleFunc: tt.handle}
 			if err := RegisterRequestHandler(handler); err != nil {
 				t.Fatalf("register handler: %v", err)
 			}
@@ -226,8 +228,6 @@ func TestSend(t *testing.T) {
 	}
 }
 
-func TestSend_HandlerNotFound(t *testing.T) {
-	if _, err := Send[DummyRequest1, DummyResponse1](context.Background(), DummyRequest1{}); err != ErrHandlerNotFound {
-		t.Errorf("want error %v, got %v", ErrHandlerNotFound, err)
-	}
+func clearRequestHandlers() {
+	rhandlers = map[reqHnKey]interface{}{}
 }

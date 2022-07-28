@@ -3,15 +3,22 @@ package mob
 import (
 	"context"
 	"reflect"
+	"sync"
 )
 
+// ehandlers is a global registry for event handlers.
 var ehandlers map[reflect.Type][]interface{} = map[reflect.Type][]interface{}{}
 
+// EventHandler provides an interface for an event handler.
 type EventHandler[T any] interface {
 	Named
 	Handle(context.Context, T) error
 }
 
+// RegisterRequestHandler adds a given event handler to the global registry.
+// Returns nil if the handler added successfully, an error otherwise.
+//
+// Multiple event handlers can be registered for a single event's type.
 func RegisterEventHandler[T any](hn EventHandler[T]) error {
 	if !isValid(hn) {
 		return ErrInvalidHandler
@@ -28,6 +35,10 @@ func RegisterEventHandler[T any](hn EventHandler[T]) error {
 	return nil
 }
 
+// Dispatch dispatches a given event and execute all handlers subscribed to dispatched event's type.
+// Handlers are executed concurrently and errors are collected, if any, they're returned to the client.
+//
+// If there is no appropriate handler in the global registry, ErrHandlerNotFound is returned.
 func Dispatch[T any](ctx context.Context, ev T) error {
 	evt := reflect.TypeOf(ev)
 	hns, ok := ehandlers[evt]
@@ -35,32 +46,29 @@ func Dispatch[T any](ctx context.Context, ev T) error {
 		return ErrHandlerNotFound
 	}
 	n := len(hns)
-	wc := make(chan token, n)
-	ec := make(chan HandlerError)
+	c := make(chan HandlerError)
+	var wg sync.WaitGroup
 	for i := 0; i < n; i++ {
-		wc <- token{}
+		wg.Add(1)
 		go func(i int) {
-			defer func() { <-wc }()
+			defer wg.Done()
 			// Dispatching result not checked because if a handler is found then it should always satisfy EventHandler[T] interface.
 			dhn, _ := hns[i].(EventHandler[T])
 			err := dhn.Handle(ctx, ev)
 			if err != nil {
-				ec <- HandlerError{Handler: dhn.Name(), Err: err}
+				c <- HandlerError{Handler: dhn.Name(), Err: err}
 			}
 		}(i)
 	}
 	go func() {
-		for i := 0; i < n; i++ {
-			wc <- token{}
-		}
-		close(ec)
+		wg.Wait()
+		close(c)
 	}()
-	errors := make([]HandlerError, 0, n)
-	for err := range ec {
-		errors = append(errors, err)
+	var aggr AggregateHandlerError = make([]HandlerError, 0, n)
+	for err := range c {
+		aggr = append(aggr, err)
 	}
-	if len(errors) > 0 {
-		var aggr AggregateHandlerError = errors
+	if len(aggr) > 0 {
 		return aggr
 	}
 	return nil
