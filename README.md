@@ -98,6 +98,8 @@ There are two cases where I find `mob` extremely useful.
 
 The first one is to slim the application layer API handlers. `mob` centralizes control so there is no need to use DI. It makes the components more portable.
 
+The following example shows one of the most popular kind of the application layers handlers - HTTP handlers.
+
 *Classic way*
 ```go
 func GetUserHandler(u UserGetter) http.HandlerFunc {
@@ -126,9 +128,9 @@ func GetUser(rw http.ResponseWriter, req *http.Request) {
 ```
 
 
-`mob` is a convenient tool for applying *CQS* / *CQRS*.
+`mob` is a convenient tool for applying *CQS*.
 
-`mob` also makes it easier to take advantage of domain events. Domain events are used to apply side-effects in response to changes within a single domain.
+`mob` also makes it easier to take advantage of any kind of in-process, event-based communication. A domain event processing is a great example.
 
 *Classic way*
 ```go
@@ -138,6 +140,7 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
     _ = s.Repository.UpdateUser(ctx, u)
     _ = s.ContactBookService.RefreshContactBook(ctx)
     _ = s.NewsletterService.RefreshNewsletterContactInformation(ctx)
+    // Do more side-effect actions in response to the email changed event.
     return nil
 }
 ```
@@ -148,9 +151,9 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
     u, _ := s.Repository.GetUser(ctx, id)
     u.Email = email
     _ = s.Repository.UpdateUser(ctx, u)
-    _ = mob.Notify(ctx, UserEmailChangedEvent{UserId: id, Email: email})
+    _ = mob.Notify(ctx, EmailChanged{UserID: id, Email: email})
     return nil
 }
 ```
 
-`mob` has some drawbacks. It makes explicit communication implicit - in many cases explicit communication is much better than implicit one. Also, where performance is a critical thing, you'd rather go with a explicit communication - it's always faster to call a handler directly.
+`mob` has some drawbacks. It makes an explicit communication implicit - in many cases a direct communication is much better than an indirect one. Also, where performance is a critical factor, you'd rather go with the explicit communication - it's always faster to call a handler directly.
