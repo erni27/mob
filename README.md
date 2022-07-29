@@ -1,12 +1,17 @@
 # mob
 
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/erni27/mob/ci?style=flat-square)](https://github.com/erni27/mob/actions?query=workflow%3ACI)
+[![Go Report Card](https://goreportcard.com/badge/github.com/erni27/mob?style=flat-square)](https://goreportcard.com/report/github.com/erni27/mob)
+![Go Version](https://img.shields.io/badge/go%20version-%3E=1.18-61CFDD.svg?style=flat-square)
+[![GoDoc](https://pkg.go.dev/badge/mod/github.com/erni27/mob)](https://pkg.go.dev/mod/github.com/erni27/mob)
+
 `mob` is a generic-based, simple **m**ediator / **ob**server library.
 
 It supports in-process requests / events processing.
 
 ## Motivation
 
-I was a bit tired of managing dependencies between handlers. Reusing them became the existential issue. That's how `mob` has been created. It solves complex dependency management by introducing a single communication point. The *mediator* part encapsulates request-response communication while the *observer* one acts as a *facade* focused on *observer* relationships.
+I was a bit tired of managing dependencies between handlers. Reusing them became the existential issue. That's how `mob` has been created. It solves complex dependency management by introducing a single communication point. The *mediator* part encapsulates request-response communication while the *observer* one acts as a *facade* focused on *observer* relationships. `mob` is conceptually similiar to [Event aggregator](https://martinfowler.com/eaaDev/EventAggregator.html) described by Martin Fowler.
 
 `mob` supports two types of handlers - request handlers and event handlers.
 
