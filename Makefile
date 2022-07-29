@@ -13,7 +13,7 @@ fix: ## Fix lint violations.
 .PHONY: test
 test: ## Run all tests.
 	mkdir -p bin
-	go test  -count=1 -race -covermode=atomic -coverprofile=bin/coverage.out `go list ./... | grep -v /examples/`
+	go test ./...  -count=1 -race -covermode=atomic -coverprofile=bin/coverage.out 
 
 .PHONY: coverage
 coverage: test ## Run all tests and open coverage result as an html.

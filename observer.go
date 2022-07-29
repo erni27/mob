@@ -35,11 +35,11 @@ func RegisterEventHandler[T any](hn EventHandler[T]) error {
 	return nil
 }
 
-// Dispatch dispatches a given event and execute all handlers subscribed to dispatched event's type.
+// Notify dispatches a given event and execute all handlers registered with a dispatched event's type.
 // Handlers are executed concurrently and errors are collected, if any, they're returned to the client.
 //
 // If there is no appropriate handler in the global registry, ErrHandlerNotFound is returned.
-func Dispatch[T any](ctx context.Context, ev T) error {
+func Notify[T any](ctx context.Context, ev T) error {
 	evt := reflect.TypeOf(ev)
 	hns, ok := ehandlers[evt]
 	if !ok {

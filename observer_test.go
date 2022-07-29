@@ -125,13 +125,13 @@ func TestRegisterEventHandler(t *testing.T) {
 	}
 }
 
-func TestDispatch_HandlerNotFound(t *testing.T) {
-	if err := Dispatch(context.Background(), DummyEvent1{}); err != ErrHandlerNotFound {
+func TestNotify_HandlerNotFound(t *testing.T) {
+	if err := Notify(context.Background(), DummyEvent1{}); err != ErrHandlerNotFound {
 		t.Errorf("want error %v, got %v", ErrHandlerNotFound, err)
 	}
 }
 
-func TestDispatch(t *testing.T) {
+func TestNotify(t *testing.T) {
 	errFirst := errors.New("first")
 	errSecond := errors.New("second")
 	errThird := errors.New("third")
@@ -218,7 +218,7 @@ func TestDispatch(t *testing.T) {
 					t.Fatalf("want success, got %v", err)
 				}
 			}
-			err := Dispatch(context.Background(), tt.arg)
+			err := Notify(context.Background(), tt.arg)
 			for _, hn := range tt.handlers {
 				if calls := hn.Calls(); calls != 1 {
 					t.Fatalf("want %s called exactly 1, got %d", hn.Name(), calls)

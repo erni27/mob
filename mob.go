@@ -32,6 +32,10 @@ func (e HandlerError) Error() string {
 	return e.Handler + ": " + e.Err.Error()
 }
 
+func (e HandlerError) Is(target error) bool {
+	return errors.Is(e.Err, target)
+}
+
 // An AggregateHandlerError is a type alias for a slice of handler errors. It applies only to event handlers.
 type AggregateHandlerError []HandlerError
 
@@ -50,10 +54,6 @@ func (e AggregateHandlerError) Is(target error) bool {
 		}
 	}
 	return false
-}
-
-func (e HandlerError) Is(target error) bool {
-	return errors.Is(e.Err, target)
 }
 
 type token struct{}

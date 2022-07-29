@@ -6,7 +6,7 @@ It supports in-process requests / events processing.
 
 ## Motivation
 
-I was a bit tired of managing dependencies between handlers. Reusing them became the existential issue. That's how `mob` has been created. It solves complex dependency management by introducing a single communication point. `mob` acts as a *facade*. The *mediator* part encapsulates request-response communication while the *observer* one acts as a *facade* focused on *observer* relationships.
+I was a bit tired of managing dependencies between handlers. Reusing them became the existential issue. That's how `mob` has been created. It solves complex dependency management by introducing a single communication point. The *mediator* part encapsulates request-response communication while the *observer* one acts as a *facade* focused on *observer* relationships.
 
 `mob` supports two types of handlers - request handlers and event handlers.
 
@@ -14,6 +14,143 @@ I was a bit tired of managing dependencies between handlers. Reusing them became
 
 A request handler responses to a particular request.
 
+Request handlers can be registered through the `RegisterRequestHandler` method.
+
+```go
+type DummyHandler struct{}
+
+func(DummyHandler) Name() string {
+    return "DummyHandler"
+}
+
+func (DummyHandler) Handle(ctx context.Context, req DummyRequest) (DummyResponse, error) {
+    // Logic.
+}
+
+...
+
+func main() {
+    handler := DummyHandler{}
+    if err := mob.RegisterRequestHandler[DummyRequest, DummyResponse](handler); err != nil {
+        log.Fatalf("register handler %s: %v", handler.Name(), err)
+    }
+}
+```
+
+A handler to register must satisfy the `RequestHandler` interface. Both request and response can have arbitrary data types.
+
+Only one handler for a particular request-response pair can be registered. To avoid handlers conflicts use type alias declarations.
+
+To send a request and get a response simply call the `Send` method.
+
+```go
+// Somewhere in your code.
+response, err := mob.Send[DummyRequest, DummyResponse](ctx, req)
+```
+
+If a handler does not exist for a given request - response pair - `ErrHandlerNotFound` is returned.
+
 ## Event handlers
 
 An event handler executes some logic in response to a dispatched event.
+
+Event handlers can be registered through the `RegisterEventHandler` method.
+
+```go
+type DummyHandler struct{}
+
+func(DummyHandler) Name() string {
+    return "DummyHandler"
+}
+
+func (DummyHandler) Handle(ctx context.Context, req DummyRequest) error {
+    // Logic.
+}
+
+...
+
+func main() {
+    handler := DummyHandler{}
+    if err := mob.RegisterEventHandler[DummyRequest](handler); err != nil {
+        log.Fatalf("register handler %s: %v", handler.Name(), err)
+    }
+}
+```
+
+A handler to register must satisfy the `EventHandler` interface. A request can have an arbitrary data type.
+
+Event handlers are almost identical to the request ones. There are a few subtle differences though. An event handler does not return a response, only an error in case of failure. Unlike request ones, multiple handlers for a given request type can be registered. Be careful, `mob` doesn't check if a concrete handler is registered multiple times. Type alias declarations solves handler conflicts.
+
+To notify all registered handlers about a certain event, call the `Notify` method.
+
+```go
+// Somewhere in your code.
+err := mob.Notify(ctx, event)
+```
+
+`mob` executes all registered handlers concurrently. If at least one of them fails, an aggregate error containing all errors is returned.
+
+## Use cases
+
+There are many use cases for `mob`. Everytime when there is a burden of dependency management, `mob` can become a useful friend.
+
+There are two cases where I find `mob` extremely useful.
+
+The first one is to slim the application layer API handlers. `mob` centralizes control so there is no need to use DI. It makes the components more portable.
+
+*Classic way*
+```go
+func GetUserHandler(u UserGetter) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		var dureq DummyUserRequest
+		_ = json.NewDecoder(req.Body).Decode(&dureq)
+		res, _ := u.Get(req.Context(), dureq)
+		rw.Header().Set("content-type", "application/json")
+		rw.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(rw).Encode(res)
+	}
+}
+```
+
+
+*`mob` way*
+```go
+func GetUser(rw http.ResponseWriter, req *http.Request) {
+	var dureq DummyUserRequest
+	_ = json.NewDecoder(req.Body).Decode(&dureq)
+	res, _ := mob.Send[DummyUserRequest, DummyUserResponse](req.Context(), dureq)
+	rw.Header().Set("content-type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(rw).Encode(res)
+}
+```
+
+
+`mob` is a convenient tool for applying *CQS* / *CQRS*.
+
+`mob` also makes it easier to take advantage of domain events. Domain events are used to apply side-effects in response to changes within a single domain.
+
+*Classic way*
+```go
+func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) error {
+    u, _ := s.Repository.GetUser(ctx, id)
+    u.Email = email
+    _ = s.Repository.UpdateUser(ctx, u)
+    _ = s.ContactBookService.RefreshContactBook(ctx)
+    _ = s.NewsletterService.RefreshNewsletterContactInformation(ctx)
+    return nil
+}
+```
+
+*`mob` way*
+```go
+func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) error {
+    u, _ := s.Repository.GetUser(ctx, id)
+    u.Email = email
+    _ = s.Repository.UpdateUser(ctx, u)
+    _ = mob.Notify(ctx, UserEmailChangedEvent{UserId: id, Email: email})
+    return nil
+}
+```
+
+`mob` has some drawbacks. It makes explicit communication implicit - in many cases explicit communication is much better than implicit one. Also, where performance is a critical thing, you'd rather go with a explicit communication - it's always faster to call a handler directly.
