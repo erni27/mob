@@ -13,7 +13,7 @@ type Named interface {
 }
 
 var (
-	// ErrHandlerNotFound indicates that a requested handler is not registerd.
+	// ErrHandlerNotFound indicates that a requested handler is not registered.
 	ErrHandlerNotFound = errors.New("mob: handler not found")
 	// ErrInvalidHandler indicates that a given handler is not valid.
 	ErrInvalidHandler = errors.New("mob: invalid handler")

@@ -18,7 +18,9 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v3
       - name: test
-        run: go test ./... -race -v
+        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
+      - name: upload coverage
+        uses: codecov/codecov-action@v3
   lint:
     name: lint
     runs-on: ubuntu-latest
