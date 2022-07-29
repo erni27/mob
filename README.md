@@ -1,6 +1,6 @@
 # mob
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/erni27/mob/CI?style=flat-square)](https://github.com/erni27/mob/actions?query=workflow%3ACI)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/erni27/mob/ci?style=flat-square)](https://github.com/erni27/mob/actions?query=workflow%3ACI)
 [![Go Report Card](https://goreportcard.com/badge/github.com/erni27/mob?style=flat-square)](https://goreportcard.com/report/github.com/erni27/mob)
 ![Go Version](https://img.shields.io/badge/go%20version-%3E=1.18-61CFDD.svg?style=flat-square)
 [![GoDoc](https://pkg.go.dev/badge/mod/github.com/erni27/mob)](https://pkg.go.dev/mod/github.com/erni27/mob)
