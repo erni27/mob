@@ -16,6 +16,7 @@ func (*DummyEventHandler4) Handle(_ context.Context, _ DummyEvent1) error {
 	return nil
 }
 
+//nolint:errcheck
 func BenchmarkNotify(b *testing.B) {
 	tests := [][]EventHandler[DummyEvent1]{
 		{&DummyEventHandler4{}},

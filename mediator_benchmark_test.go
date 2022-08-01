@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+//nolint:errcheck
 func BenchmarkSend(b *testing.B) {
 	defer clearRequestHandlers()
 	handler := &DummyRequestHandler2{}
