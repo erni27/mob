@@ -162,4 +162,6 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
 }
 ```
 
-`mob` has some drawbacks. It makes an explicit communication implicit - in many cases a direct communication is much better than an indirect one. Also, where performance is a critical factor, you'd rather go with the explicit communication - it's always faster to call a handler directly.
+## Conclusion
+
+Although `mob` can be exteremely useful. It has some drawbacks. It makes an explicit communication implicit - in many cases a direct communication is much better than an indirect one. Also, where performance is a critical factor, you'd rather go with the explicit communication - it's always faster to call a handler directly.

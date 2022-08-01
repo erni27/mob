@@ -12,7 +12,7 @@ type reqHnKey struct {
 }
 
 // rhandlers is a global registry for request handlers.
-var rhandlers map[reqHnKey]interface{} = map[reqHnKey]interface{}{}
+var rhandlers = map[reqHnKey]interface{}{}
 
 // RequestHandler provides an interface for a request handler.
 type RequestHandler[T any, U any] interface {
