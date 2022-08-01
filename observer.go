@@ -7,7 +7,7 @@ import (
 )
 
 // ehandlers is a global registry for event handlers.
-var ehandlers map[reflect.Type][]interface{} = map[reflect.Type][]interface{}{}
+var ehandlers = map[reflect.Type][]interface{}{}
 
 // EventHandler provides an interface for an event handler.
 type EventHandler[T any] interface {
@@ -30,8 +30,7 @@ func RegisterEventHandler[T any](hn EventHandler[T]) error {
 		ehandlers[evt] = []interface{}{hn}
 		return nil
 	}
-	hns = append(hns, hn)
-	ehandlers[evt] = hns
+	ehandlers[evt] = append(hns, hn)
 	return nil
 }
 

@@ -19,6 +19,9 @@ test: ## Run all tests.
 coverage: test ## Run all tests and open coverage result as an html.
 	go tool cover -html=bin/coverage.out
 
+.PHONY: bench
+bench: bench ## Run all benchmarks.
+	go test -bench=. -count=5 -benchmem
 
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 .PHONY: help
