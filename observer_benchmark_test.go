@@ -37,7 +37,9 @@ func BenchmarkNotify(b *testing.B) {
 			ev := DummyEvent1{String: "string", Int: 997}
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				Notify(ctx, ev)
+				if err := Notify(ctx, ev); err != nil {
+					b.Fatalf("want no err, got %v", err)
+				}
 			}
 		})
 	}

@@ -8,9 +8,13 @@ import (
 //nolint:errcheck
 func BenchmarkSend(b *testing.B) {
 	defer clearRequestHandlers()
-	handler := &DummyRequestHandler2{}
-	err := RegisterRequestHandler[DummyRequest2, DummyResponse2](handler)
-	if err != nil {
+	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](&DummyRequestHandler1{}); err != nil {
+		b.Fatalf("register request handler: %v", err)
+	}
+	if err := RegisterRequestHandler[DummyRequest2, DummyResponse2](&DummyRequestHandler2{}); err != nil {
+		b.Fatalf("register request handler: %v", err)
+	}
+	if err := RegisterRequestHandler[DummyRequest1, DummyResponse2](&DummyRequestHandler3{}); err != nil {
 		b.Fatalf("register request handler: %v", err)
 	}
 	ctx := context.Background()
@@ -24,4 +28,5 @@ func BenchmarkSend(b *testing.B) {
 	}
 }
 
+var err error
 var res DummyResponse2
