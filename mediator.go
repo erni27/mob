@@ -32,11 +32,8 @@ func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
 	}
 	var req T
 	var res U
-	reqt := reflect.TypeOf(req)
-	rest := reflect.TypeOf(res)
-	k := reqHnKey{reqt: reqt, rest: rest}
-	_, ok := rhandlers[k]
-	if ok {
+	k := reqHnKey{reqt: reflect.TypeOf(req), rest: reflect.TypeOf(res)}
+	if _, ok := rhandlers[k]; ok {
 		return ErrDuplicateHandler
 	}
 	rhandlers[k] = hn
@@ -48,9 +45,7 @@ func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
 // If the appropriate handler does not exist in the global registry, ErrHandlerNotFound is returned.
 func Send[T any, U any](ctx context.Context, req T) (U, error) {
 	var res U
-	reqt := reflect.TypeOf(req)
-	rest := reflect.TypeOf(res)
-	k := reqHnKey{reqt: reqt, rest: rest}
+	k := reqHnKey{reqt: reflect.TypeOf(req), rest: reflect.TypeOf(res)}
 	hn, ok := rhandlers[k]
 	if !ok {
 		return res, ErrHandlerNotFound
