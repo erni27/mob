@@ -24,13 +24,8 @@ func RegisterEventHandler[T any](hn EventHandler[T]) error {
 		return ErrInvalidHandler
 	}
 	var ev T
-	evt := reflect.TypeOf(ev)
-	hns, ok := ehandlers[evt]
-	if !ok {
-		ehandlers[evt] = []interface{}{hn}
-		return nil
-	}
-	ehandlers[evt] = append(hns, hn)
+	k := reflect.TypeOf(ev)
+	ehandlers[k] = append(ehandlers[k], hn)
 	return nil
 }
 
@@ -53,8 +48,7 @@ func Notify[T any](ctx context.Context, ev T) error {
 			defer wg.Done()
 			// Dispatching result not checked because if a handler is found then it should always satisfy EventHandler[T] interface.
 			dhn, _ := hns[i].(EventHandler[T])
-			err := dhn.Handle(ctx, ev)
-			if err != nil {
+			if err := dhn.Handle(ctx, ev); err != nil {
 				c <- HandlerError{Handler: dhn.Name(), Err: err}
 			}
 		}(i)
