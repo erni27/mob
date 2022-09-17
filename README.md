@@ -5,6 +5,7 @@
 ![Go Version](https://img.shields.io/badge/go%20version-%3E=1.18-61CFDD.svg?style=flat-square)
 [![GoDoc](https://pkg.go.dev/badge/mod/github.com/erni27/mob)](https://pkg.go.dev/mod/github.com/erni27/mob)
 [![Coverage Status](https://codecov.io/gh/erni27/mob/branch/master/graph/badge.svg)](https://codecov.io/gh/erni27/mob)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
 
 `mob` is a generic-based, simple **m**ediator / **ob**server library.
 
@@ -96,6 +97,10 @@ err := mob.Notify(ctx, event)
 
 `mob` executes all registered handlers concurrently. If at least one of them fails, an aggregate error containing all errors is returned.
 
+## Concurrency
+
+`mob` is a concurrent-safe library for multiple requests and events processing. But you shouldn't mix handlers' registration  with requests or events processing. `mob` assumes that clients register their handlers during the initialization process and after first request or event is processed - no handler is registered.
+
 ## Use cases
 
 There are many use cases for `mob`. Everytime when there is a burden of dependency management, `mob` can become a useful friend.
@@ -107,6 +112,7 @@ The first one is to slim the application layer API handlers. `mob` centralizes c
 The following example shows one of the most popular kind of the application layers handlers - HTTP handlers.
 
 *Classic way*
+
 ```go
 func GetUserHandler(u UserGetter) http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
@@ -120,8 +126,8 @@ func GetUserHandler(u UserGetter) http.HandlerFunc {
 }
 ```
 
-
 *`mob` way*
+
 ```go
 func GetUser(rw http.ResponseWriter, req *http.Request) {
 	var dureq DummyUserRequest
@@ -134,11 +140,12 @@ func GetUser(rw http.ResponseWriter, req *http.Request) {
 ```
 
 
-`mob` is a convenient tool for applying *CQS*.
+`mob` is a convenient tool for applying *CQS* and *CQRS*.
 
 `mob` also makes it easier to take advantage of any kind of in-process, event-based communication. A domain event processing is a great example.
 
 *Classic way*
+
 ```go
 func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) error {
     u, _ := s.Repository.GetUser(ctx, id)
@@ -152,6 +159,7 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
 ```
 
 *`mob` way*
+
 ```go
 func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) error {
     u, _ := s.Repository.GetUser(ctx, id)
