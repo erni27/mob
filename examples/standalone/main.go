@@ -42,7 +42,7 @@ func (h LogEventHandler) Handle(_ context.Context, event LogEvent) error {
 }
 
 func main() {
-	// Initialize a new mob instance.
+	// Initialize a new, standalone mob instance.
 	m := mob.New()
 
 	ctx := context.Background()
