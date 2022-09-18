@@ -7,6 +7,23 @@ import (
 	"reflect"
 )
 
+var m *Mob
+
+func init() {
+	m = New()
+}
+
+// A Mob is a request / event handlers registry.
+type Mob struct {
+	rhandlers map[reqHnKey]interface{}
+	ehandlers map[reflect.Type][]interface{}
+}
+
+// New returns an initialized Mob instance.
+func New() *Mob {
+	return &Mob{rhandlers: map[reqHnKey]interface{}{}, ehandlers: map[reflect.Type][]interface{}{}}
+}
+
 // Named is an interface that wraps Name() string method.
 type Named interface {
 	Name() string

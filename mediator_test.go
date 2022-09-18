@@ -84,7 +84,7 @@ func (DummyRequestHandler4) Handle(_ context.Context, _ DummyRequest2) (DummyRes
 }
 
 func TestRegisterRequestHandler_DuplicateHandler(t *testing.T) {
-	defer clearRequestHandlers()
+	defer clear()
 	tests := []struct {
 		name string
 		arg  RequestHandler[DummyRequest1, DummyResponse1]
@@ -114,7 +114,7 @@ func TestRegisterRequestHandler_DuplicateHandler(t *testing.T) {
 }
 
 func TestRegisterRequestHandler_InvalidHandler(t *testing.T) {
-	defer clearRequestHandlers()
+	defer clear()
 	tests := []struct {
 		name string
 		arg  RequestHandler[DummyRequest1, DummyResponse1]
@@ -141,7 +141,7 @@ func TestRegisterRequestHandler_InvalidHandler(t *testing.T) {
 }
 
 func TestRegisterRequestHandler(t *testing.T) {
-	defer clearRequestHandlers()
+	defer clear()
 	t.Run("dummy handler 1", func(t *testing.T) {
 		if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](DummyRequestHandler1{}); err != nil {
 			t.Errorf("want success, got error %v", err)
@@ -211,7 +211,7 @@ func TestSend(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer clearRequestHandlers()
+			defer clear()
 			var handler RequestHandler[DummyRequest1, DummyResponse1] = DummyRequestHandler1{handleFunc: tt.handle}
 			if err := RegisterRequestHandler(handler); err != nil {
 				t.Fatalf("register handler: %v", err)
@@ -226,8 +226,4 @@ func TestSend(t *testing.T) {
 			}
 		})
 	}
-}
-
-func clearRequestHandlers() {
-	rhandlers = map[reqHnKey]interface{}{}
 }

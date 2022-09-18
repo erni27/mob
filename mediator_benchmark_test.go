@@ -7,7 +7,7 @@ import (
 
 //nolint:errcheck
 func BenchmarkSend(b *testing.B) {
-	defer clearRequestHandlers()
+	defer clear()
 	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](&DummyRequestHandler1{}); err != nil {
 		b.Fatalf("register request handler: %v", err)
 	}
