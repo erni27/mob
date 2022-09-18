@@ -170,7 +170,9 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
 }
 ```
 
-## Multiple Mob instances
+For more information on how to use the global mob instance, see the [example](https://github.com/erni27/mob/blob/master/examples/global/main.go).
+
+## Multiple mobs
 
 All previous examples correspond to the global mob (singleton based approach).
 
@@ -209,6 +211,8 @@ err := mob.NewEventNotifier[LogEvent](m).Notify(ctx, "Hello world!")
 ```
 
 `mob` package keep track only of the global mob instance. It means that users are responsible for keeping track of the multiple, standalone mob instances.
+
+For more information on how to create and use a standalone mob instance, see the [example](https://github.com/erni27/mob/blob/master/examples/standalone/main.go).
 
 ## Conclusion
 
