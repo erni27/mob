@@ -3,7 +3,6 @@ package mob
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 )
 
@@ -98,7 +97,7 @@ func TestRegisterEventHandler_InvalidHandler(t *testing.T) {
 }
 
 func TestRegisterEventHandler(t *testing.T) {
-	defer clearEventHandlers()
+	defer clear()
 	tests := []struct {
 		name string
 		arg  EventHandler[DummyEvent1]
@@ -212,7 +211,7 @@ func TestNotify(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer clearEventHandlers()
+			defer clear()
 			for _, hn := range tt.handlers {
 				if err := RegisterEventHandler[DummyEvent1](hn); err != nil {
 					t.Fatalf("want success, got %v", err)
@@ -231,8 +230,4 @@ func TestNotify(t *testing.T) {
 			}
 		})
 	}
-}
-
-func clearEventHandlers() {
-	ehandlers = map[reflect.Type][]interface{}{}
 }

@@ -27,7 +27,7 @@ func BenchmarkNotify(b *testing.B) {
 	}
 	for _, handlers := range tests {
 		b.Run(fmt.Sprintf("number of handlers %d", len(handlers)), func(b *testing.B) {
-			defer clearEventHandlers()
+			defer clear()
 			for _, handler := range handlers {
 				if err := RegisterEventHandler(handler); err != nil {
 					b.Fatalf("register event handler: %v", err)

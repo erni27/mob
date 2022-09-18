@@ -50,3 +50,7 @@ func TestAggregateHandlerError_Error(t *testing.T) {
 		}
 	}
 }
+
+func clear() {
+	m = New()
+}
