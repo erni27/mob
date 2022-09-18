@@ -38,7 +38,7 @@ type sender[T any, U any] struct {
 func (s *sender[T, U]) Send(ctx context.Context, req T) (U, error) {
 	var res U
 	k := reqHnKey{reqt: reflect.TypeOf(req), rest: reflect.TypeOf(res)}
-	hn, ok := m.rhandlers[k]
+	hn, ok := s.m.rhandlers[k]
 	if !ok {
 		return res, ErrHandlerNotFound
 	}

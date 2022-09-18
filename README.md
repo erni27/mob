@@ -88,7 +88,7 @@ A handler to register must satisfy the `EventHandler` interface. A request can h
 
 Event handlers are almost identical to the request ones. There are a few subtle differences though. An event handler does not return a response, only an error in case of failure. Unlike request ones, multiple handlers for a given request type can be registered. Be careful, `mob` doesn't check if a concrete handler is registered multiple times. Type alias declarations solves handler conflicts.
 
-To notify all registered handlers about a certain event, call the `Notify` method.
+To notify all registered handlers about a certain event call the `Notify` method.
 
 ```go
 // Somewhere in your code.
@@ -115,14 +115,14 @@ The following example shows one of the most popular kind of the application laye
 
 ```go
 func GetUserHandler(u UserGetter) http.HandlerFunc {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		var dureq DummyUserRequest
-		_ = json.NewDecoder(req.Body).Decode(&dureq)
-		res, _ := u.Get(req.Context(), dureq)
-		rw.Header().Set("content-type", "application/json")
-		rw.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(rw).Encode(res)
-	}
+    return func(rw http.ResponseWriter, req *http.Request) {
+        var dureq DummyUserRequest
+        _ = json.NewDecoder(req.Body).Decode(&dureq)
+        res, _ := u.Get(req.Context(), dureq)
+        rw.Header().Set("content-type", "application/json")
+        rw.WriteHeader(http.StatusOK)
+        _ = json.NewEncoder(rw).Encode(res)
+    }
 }
 ```
 
@@ -130,12 +130,12 @@ func GetUserHandler(u UserGetter) http.HandlerFunc {
 
 ```go
 func GetUser(rw http.ResponseWriter, req *http.Request) {
-	var dureq DummyUserRequest
-	_ = json.NewDecoder(req.Body).Decode(&dureq)
-	res, _ := mob.Send[DummyUserRequest, DummyUserResponse](req.Context(), dureq)
-	rw.Header().Set("content-type", "application/json")
-	rw.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(rw).Encode(res)
+    var dureq DummyUserRequest
+    _ = json.NewDecoder(req.Body).Decode(&dureq)
+    res, _ := mob.Send[DummyUserRequest, DummyUserResponse](req.Context(), dureq)
+    rw.Header().Set("content-type", "application/json")
+    rw.WriteHeader(http.StatusOK)
+    _ = json.NewEncoder(rw).Encode(res)
 }
 ```
 
@@ -169,6 +169,46 @@ func (s *UserService) UpdateEmail(ctx context.Context, id string, email string) 
     return nil
 }
 ```
+
+## Multiple Mob instances
+
+All previous examples correspond to the global mob (singleton based approach).
+
+Although, `mob` itself acts as a global handlers registry. It is possible to configure as many as mobs (so multiple mob instances) as you want. Each mob instance acts as a separate handlers registry. `mob` package uses slightly different API to support multiple mob instances (mostly due to currently supported generic model which doesn't allow method type parameters).
+
+To initialise a new, standalone mob instance use the `New` method.
+
+```go
+m := mob.New()
+```
+
+`RegisterRequestHandlerTo` is used to register a request handler to the standalone mob instance. Pass the mob instance as a first function parameter followed by a handler to register.
+
+```go
+err := mob.RegisterRequestHandlerTo[EchoRequest, EchoResponse](m, EchoRequestHandler{})
+```
+
+Because current `Go` design doesn't support the method having type parameters, `mob` uses facilitators to get advantage of mob's generic behaviour. Creating a `RequestSender` tied to a standalone mob instance must precede sending a request through the `Send` method.
+
+```go
+res, err := mob.NewRequestSender[EchoRequest, EchoResponse](m).Send(ctx, "Hello world!")
+```
+
+Working with event handlers is similiar.
+
+To register an event handler call the `RegisterEventHandlerTo`.
+
+```go
+err := mob.RegisterEventHandlerTo[LogEvent](m, LogEventHandler{});
+```
+
+In order to notify an occurance of an event create an `EventNotifier` tied to a standalone mob instance and then call the `Notify` method.
+
+```go
+err := mob.NewEventNotifier[LogEvent](m).Notify(ctx, "Hello world!")
+```
+
+`mob` package keep track only of the global mob instance. It means that users are responsible for keeping track of the multiple, standalone mob instances.
 
 ## Conclusion
 
