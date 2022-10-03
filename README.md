@@ -89,6 +89,27 @@ err := mob.Notify(ctx, event)
 
 `mob` executes all registered handlers concurrently. If at least one of them fails, an aggregate error containing all errors is returned.
 
+## Named handlers
+
+It's recommended to register a handler with a meaningful name. `WithName` is used to return an `Option` that associates a given name with a handler.
+
+```go
+err := mob.RegisterEventHandler[LogEvent](LogEventHandler{}, mob.WithName("LogEventHandler"));
+```
+
+It helps debugging potential issues. Exteremely useful when multiple event handlers are registered to the specific subject and there is a need to communicate which handler fails. `mob` prefixes all errors by a handler's name if configured.
+
+## Register ordinary functions as handlers
+
+`mob` exports both `RequestHandlerFunc` and `EventHandlerFunc` that act as adapters to allow the use of ordinary functions (and structs' methods) as request and event handlers.
+
+```go
+var hf mob.RequestHandlerFunc[DummyRequest, DummyResponse] = func(ctx context.Context, req DummyRequest) (DummyResponse, error) {
+    // Your logic goes here.
+}
+err := mob.RegisterRequestHandler[DummyRequest, DummyResponse](hf)
+```
+
 ## Concurrency
 
 `mob` is a concurrent-safe library for multiple requests and events processing. But you shouldn't mix handlers' registration  with requests or events processing. `mob` assumes that clients register their handlers during the initialization process and after first request or event is processed - no handler is registered.
