@@ -218,9 +218,9 @@ func TestNotify(t *testing.T) {
 				}
 			}
 			err := Notify(context.Background(), tt.arg)
-			for _, hn := range tt.handlers {
+			for i, hn := range tt.handlers {
 				if calls := hn.Calls(); calls != 1 {
-					t.Fatalf("want %s called exactly 1, got %d", hn.Name(), calls)
+					t.Fatalf("want handler %d called exactly 1, got %d", i+1, calls)
 				}
 			}
 			for _, wantErr := range tt.want {
