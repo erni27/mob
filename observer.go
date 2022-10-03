@@ -97,8 +97,8 @@ func RegisterEventHandlerTo[T any](m *Mob, ehn EventHandler[T], opts ...Option) 
 // Returns nil if the handler added successfully, an error otherwise.
 //
 // Multiple event handlers can be registered for a single event's type.
-func RegisterEventHandler[T any](hn EventHandler[T]) error {
-	return RegisterEventHandlerTo(m, hn)
+func RegisterEventHandler[T any](hn EventHandler[T], opts ...Option) error {
+	return RegisterEventHandlerTo(m, hn, opts...)
 }
 
 // Notify dispatches a given event and execute all handlers registered with a dispatched event's type.

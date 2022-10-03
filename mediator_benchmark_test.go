@@ -5,16 +5,15 @@ import (
 	"testing"
 )
 
-//nolint:errcheck
 func BenchmarkSend(b *testing.B) {
 	defer clear()
-	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](&DummyRequestHandler1{}); err != nil {
+	if err := RegisterRequestHandler[DummyRequest1, DummyResponse1](&DummyRequestHandler1{}, WithName("DummyRequestHandler1")); err != nil {
 		b.Fatalf("register request handler: %v", err)
 	}
-	if err := RegisterRequestHandler[DummyRequest2, DummyResponse2](&DummyRequestHandler2{}); err != nil {
+	if err := RegisterRequestHandler[DummyRequest2, DummyResponse2](&DummyRequestHandler2{}, WithName("DummyRequestHandler2")); err != nil {
 		b.Fatalf("register request handler: %v", err)
 	}
-	if err := RegisterRequestHandler[DummyRequest1, DummyResponse2](&DummyRequestHandler3{}); err != nil {
+	if err := RegisterRequestHandler[DummyRequest1, DummyResponse2](&DummyRequestHandler3{}, WithName("DummyRequestHandler3")); err != nil {
 		b.Fatalf("register request handler: %v", err)
 	}
 	ctx := context.Background()

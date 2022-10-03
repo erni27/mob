@@ -91,8 +91,8 @@ func RegisterRequestHandlerTo[T any, U any](m *Mob, rhn RequestHandler[T, U], op
 // An only one handler for a given request-response pair can be registered.
 // If support for multiple handlers for the same request-response pairs is needed within the Mob global instance,
 // introduce type aliasing to avoid handlers' collision.
-func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
-	return RegisterRequestHandlerTo(m, hn)
+func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U], opts ...Option) error {
+	return RegisterRequestHandlerTo(m, hn, opts...)
 }
 
 // Send sends a given request T to an appropriate handler and returns a response U.

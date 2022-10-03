@@ -3,6 +3,8 @@ package mob
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -21,10 +23,6 @@ type DummyEventHandler1 struct {
 	calls      int
 }
 
-func (*DummyEventHandler1) Name() string {
-	return "DummyEventHandler1"
-}
-
 func (h *DummyEventHandler1) Handle(ctx context.Context, ev DummyEvent1) error {
 	h.calls++
 	return h.handleFunc(ctx, ev)
@@ -37,10 +35,6 @@ func (h *DummyEventHandler1) Calls() int {
 type DummyEventHandler2 struct {
 	calls      int
 	handleFunc func(context.Context, DummyEvent1) error
-}
-
-func (*DummyEventHandler2) Name() string {
-	return "DummyEventHandler1"
 }
 
 func (h *DummyEventHandler2) Handle(ctx context.Context, ev DummyEvent1) error {
@@ -57,16 +51,26 @@ type DummyEventHandler3 struct {
 	calls      int
 }
 
-func (*DummyEventHandler3) Name() string {
-	return "DummyEventHandler1"
-}
-
 func (h *DummyEventHandler3) Handle(ctx context.Context, ev DummyEvent1) error {
 	h.calls++
 	return h.handleFunc(ctx, ev)
 }
 
 func (h *DummyEventHandler3) Calls() int {
+	return h.calls
+}
+
+type DummyEventHandler5 struct {
+	doSomethingFunc func(context.Context, DummyEvent1) error
+	calls           int
+}
+
+func (h *DummyEventHandler5) DoSomething(ctx context.Context, ev DummyEvent1) error {
+	h.calls++
+	return h.doSomethingFunc(ctx, ev)
+}
+
+func (h *DummyEventHandler5) Calls() int {
 	return h.calls
 }
 
@@ -212,8 +216,8 @@ func TestNotify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer clear()
-			for _, hn := range tt.handlers {
-				if err := RegisterEventHandler[DummyEvent1](hn); err != nil {
+			for i, hn := range tt.handlers {
+				if err := RegisterEventHandler[DummyEvent1](hn, WithName("Handler"+strconv.Itoa(i+1))); err != nil {
 					t.Fatalf("want success, got %v", err)
 				}
 			}
@@ -227,6 +231,55 @@ func TestNotify(t *testing.T) {
 				if !errors.Is(err, wantErr) {
 					t.Errorf("want %v, got %v", wantErr, err)
 				}
+			}
+		})
+	}
+}
+
+func TestNotify_Named(t *testing.T) {
+	var handler DummyEventHandler5
+	dummyErr := errors.New("dummy err")
+	tests := []struct {
+		name  string
+		arg   DummyEvent1
+		setup func(*DummyEventHandler5)
+		want  error
+	}{
+		{
+			name: "success",
+			arg:  DummyEvent1{String: "String", Int: 997},
+			setup: func(h *DummyEventHandler5) {
+				h.doSomethingFunc = func(_ context.Context, _ DummyEvent1) error {
+					return nil
+				}
+			},
+			want: nil,
+		},
+		{
+			name: "error",
+			arg:  DummyEvent1{String: "String", Int: 997},
+			setup: func(h *DummyEventHandler5) {
+				h.doSomethingFunc = func(_ context.Context, _ DummyEvent1) error {
+					return dummyErr
+				}
+			},
+			want: dummyErr,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer clear()
+			tt.setup(&handler)
+			var handlerf EventHandlerFunc[DummyEvent1] = handler.DoSomething
+			if err := RegisterEventHandler[DummyEvent1](handlerf, WithName("DummyEventHandler5")); err != nil {
+				t.Fatalf("want success, got %v", err)
+			}
+			err := Notify(context.Background(), tt.arg)
+			if !errors.Is(err, tt.want) {
+				t.Errorf("want %v, got %v", tt.want, err)
+			}
+			if tt.want != nil && !strings.HasPrefix(err.Error(), "DummyEventHandler5: ") {
+				t.Errorf("want named err, got %v", err.Error())
 			}
 		})
 	}
