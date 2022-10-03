@@ -26,10 +26,6 @@ Request handlers can be registered through the `RegisterRequestHandler` method.
 ```go
 type DummyHandler struct{}
 
-func(DummyHandler) Name() string {
-    return "DummyHandler"
-}
-
 func (DummyHandler) Handle(ctx context.Context, req DummyRequest) (DummyResponse, error) {
     // Logic.
 }
@@ -39,7 +35,7 @@ func (DummyHandler) Handle(ctx context.Context, req DummyRequest) (DummyResponse
 func main() {
     handler := DummyHandler{}
     if err := mob.RegisterRequestHandler[DummyRequest, DummyResponse](handler); err != nil {
-        log.Fatalf("register handler %s: %v", handler.Name(), err)
+        log.Fatalf("register handler: %v", err)
     }
 }
 ```
@@ -66,10 +62,6 @@ Event handlers can be registered through the `RegisterEventHandler` method.
 ```go
 type DummyHandler struct{}
 
-func(DummyHandler) Name() string {
-    return "DummyHandler"
-}
-
 func (DummyHandler) Handle(ctx context.Context, req DummyRequest) error {
     // Logic.
 }
@@ -79,7 +71,7 @@ func (DummyHandler) Handle(ctx context.Context, req DummyRequest) error {
 func main() {
     handler := DummyHandler{}
     if err := mob.RegisterEventHandler[DummyRequest](handler); err != nil {
-        log.Fatalf("register handler %s: %v", handler.Name(), err)
+        log.Fatalf("register handler: %v", err)
     }
 }
 ```
@@ -216,4 +208,4 @@ For more information on how to create and use a standalone mob instance, see the
 
 ## Conclusion
 
-Although `mob` can be exteremely useful. It has some drawbacks. It makes an explicit communication implicit - in many cases a direct communication is much better than an indirect one. Also, where performance is a critical factor, you'd rather go with the explicit communication - it's always faster to call a handler directly.
+Although `mob` can be exteremely useful. It has some drawbacks. It makes an explicit communication implicit - in many cases a direct communication is much better than an indirect one. Especially when it obscures your domain.

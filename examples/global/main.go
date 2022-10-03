@@ -14,10 +14,6 @@ type EchoResponse string
 
 type EchoRequestHandler struct{}
 
-func (h EchoRequestHandler) Name() string {
-	return "EchoRequestHandler"
-}
-
 func (h EchoRequestHandler) Handle(_ context.Context, req EchoRequest) (EchoResponse, error) {
 	if req == "" {
 		return "", errors.New("invalid request")
@@ -28,10 +24,6 @@ func (h EchoRequestHandler) Handle(_ context.Context, req EchoRequest) (EchoResp
 type LogEvent string
 
 type LogEventHandler struct{}
-
-func (h LogEventHandler) Name() string {
-	return "LogEventHandler"
-}
 
 func (h LogEventHandler) Handle(_ context.Context, event LogEvent) error {
 	if event == "" {
