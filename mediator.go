@@ -2,6 +2,7 @@ package mob
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 )
 
@@ -13,8 +14,14 @@ type reqHnKey struct {
 
 // RequestHandler provides an interface for a request handler.
 type RequestHandler[T any, U any] interface {
-	Named
 	Handle(context.Context, T) (U, error)
+}
+
+// RequestHandlerFunc type is an adapter to allow the use of ordinary functions as request handlers.
+type RequestHandlerFunc[T any, U any] func(context.Context, T) (U, error)
+
+func (f RequestHandlerFunc[T, U]) Handle(ctx context.Context, req T) (U, error) {
+	return f(ctx, req)
 }
 
 // RequestSender is the interface that wraps the mob's Send method.
@@ -43,10 +50,13 @@ func (s *sender[T, U]) Send(ctx context.Context, req T) (U, error) {
 		return res, ErrHandlerNotFound
 	}
 	// Dispatching result not checked because if a handler is found then it should always satisfy RequestHandler[T, U] interface.
-	dhn, _ := hn.(RequestHandler[T, U])
+	dhn, _ := hn.embedded.(RequestHandler[T, U])
+	if hn.name == "" {
+		return dhn.Handle(ctx, req)
+	}
 	res, err := dhn.Handle(ctx, req)
 	if err != nil {
-		return res, HandlerError{Handler: dhn.Name(), Err: err}
+		return res, fmt.Errorf("%s: %w", hn.name, err)
 	}
 	return res, nil
 }
@@ -57,8 +67,8 @@ func (s *sender[T, U]) Send(ctx context.Context, req T) (U, error) {
 // An only one handler for a given request-response pair can be registered.
 // If support for multiple handlers for the same request-response pairs is needed within the same Mob instance,
 // introduce type aliasing to avoid handlers' collision.
-func RegisterRequestHandlerTo[T any, U any](m *Mob, hn RequestHandler[T, U]) error {
-	if !isValid(hn) {
+func RegisterRequestHandlerTo[T any, U any](m *Mob, rhn RequestHandler[T, U], opts ...Option) error {
+	if !isValid(rhn) {
 		return ErrInvalidHandler
 	}
 	var req T
@@ -66,6 +76,10 @@ func RegisterRequestHandlerTo[T any, U any](m *Mob, hn RequestHandler[T, U]) err
 	k := reqHnKey{reqt: reflect.TypeOf(req), rest: reflect.TypeOf(res)}
 	if _, ok := m.rhandlers[k]; ok {
 		return ErrDuplicateHandler
+	}
+	hn := &handler{embedded: rhn}
+	for _, opt := range opts {
+		opt.apply(hn)
 	}
 	m.rhandlers[k] = hn
 	return nil
@@ -77,8 +91,8 @@ func RegisterRequestHandlerTo[T any, U any](m *Mob, hn RequestHandler[T, U]) err
 // An only one handler for a given request-response pair can be registered.
 // If support for multiple handlers for the same request-response pairs is needed within the Mob global instance,
 // introduce type aliasing to avoid handlers' collision.
-func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U]) error {
-	return RegisterRequestHandlerTo(m, hn)
+func RegisterRequestHandler[T any, U any](hn RequestHandler[T, U], opts ...Option) error {
+	return RegisterRequestHandlerTo(m, hn, opts...)
 }
 
 // Send sends a given request T to an appropriate handler and returns a response U.

@@ -15,18 +15,13 @@ func init() {
 
 // A Mob is a request / event handlers registry.
 type Mob struct {
-	rhandlers map[reqHnKey]interface{}
-	ehandlers map[reflect.Type][]interface{}
+	rhandlers map[reqHnKey]*handler
+	ehandlers map[reflect.Type][]*handler
 }
 
 // New returns an initialized Mob instance.
 func New() *Mob {
-	return &Mob{rhandlers: map[reqHnKey]interface{}{}, ehandlers: map[reflect.Type][]interface{}{}}
-}
-
-// Named is an interface that wraps Name() string method.
-type Named interface {
-	Name() string
+	return &Mob{rhandlers: map[reqHnKey]*handler{}, ehandlers: map[reflect.Type][]*handler{}}
 }
 
 var (
@@ -39,22 +34,13 @@ var (
 	ErrDuplicateHandler = errors.New("mob: duplicate handler")
 )
 
-// A HandlerError is an error wrapper which identifies the error source (handler) by its name.
-type HandlerError struct {
-	Handler string
-	Err     error
-}
-
-func (e HandlerError) Error() string {
-	return e.Handler + ": " + e.Err.Error()
-}
-
-func (e HandlerError) Is(target error) bool {
-	return errors.Is(e.Err, target)
+type handler struct {
+	name     string
+	embedded interface{}
 }
 
 // An AggregateHandlerError is a type alias for a slice of handler errors. It applies only to event handlers.
-type AggregateHandlerError []HandlerError
+type AggregateHandlerError []error
 
 func (e AggregateHandlerError) Error() string {
 	var msg string
@@ -75,7 +61,7 @@ func (e AggregateHandlerError) Is(target error) bool {
 
 type token struct{}
 
-func isValid(hn Named) bool {
+func isValid(hn any) bool {
 	if hn == nil {
 		return false
 	}

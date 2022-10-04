@@ -8,15 +8,10 @@ import (
 
 type DummyEventHandler4 struct{}
 
-func (*DummyEventHandler4) Name() string {
-	return "DummyEventHandler4"
-}
-
 func (*DummyEventHandler4) Handle(_ context.Context, _ DummyEvent1) error {
 	return nil
 }
 
-//nolint:errcheck
 func BenchmarkNotify(b *testing.B) {
 	tests := [][]EventHandler[DummyEvent1]{
 		{&DummyEventHandler4{}},
@@ -29,7 +24,7 @@ func BenchmarkNotify(b *testing.B) {
 		b.Run(fmt.Sprintf("number of handlers %d", len(handlers)), func(b *testing.B) {
 			defer clear()
 			for _, handler := range handlers {
-				if err := RegisterEventHandler(handler); err != nil {
+				if err := RegisterEventHandler(handler, WithName("DummyEventHandler4")); err != nil {
 					b.Fatalf("register event handler: %v", err)
 				}
 			}

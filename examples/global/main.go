@@ -2,65 +2,45 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 
 	"github.com/erni27/mob"
+	"github.com/erni27/mob/examples"
 )
-
-type EchoRequest string
-
-type EchoResponse string
-
-type EchoRequestHandler struct{}
-
-func (h EchoRequestHandler) Name() string {
-	return "EchoRequestHandler"
-}
-
-func (h EchoRequestHandler) Handle(_ context.Context, req EchoRequest) (EchoResponse, error) {
-	if req == "" {
-		return "", errors.New("invalid request")
-	}
-	return (EchoResponse)(req), nil
-}
-
-type LogEvent string
-
-type LogEventHandler struct{}
-
-func (h LogEventHandler) Name() string {
-	return "LogEventHandler"
-}
-
-func (h LogEventHandler) Handle(_ context.Context, event LogEvent) error {
-	if event == "" {
-		return errors.New("invalid event")
-	}
-	log.Println(event)
-	return nil
-}
 
 func main() {
 	ctx := context.Background()
 
 	// Register an EchoRequestHandler to the global mob instance.
-	if err := mob.RegisterRequestHandler[EchoRequest, EchoResponse](EchoRequestHandler{}); err != nil {
+	if err := mob.RegisterRequestHandler[examples.EchoRequest, examples.EchoResponse](examples.EchoRequestHandler{}); err != nil {
 		log.Fatal(err)
 	}
 	// Send a request.
-	res, err := mob.Send[EchoRequest, EchoResponse](ctx, "Hello world!")
+	eres, err := mob.Send[examples.EchoRequest, examples.EchoResponse](ctx, "Hello world!")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(res)
+	log.Println(eres)
+
+	// Register an executor function as a RequestHandler to the global mob instance.
+	executor := examples.DummyExecutor{}
+	var hf mob.RequestHandlerFunc[examples.DummyRequest, examples.DummyResponse] = executor.Execute
+	if err := mob.RegisterRequestHandler[examples.DummyRequest, examples.DummyResponse](hf); err != nil {
+		log.Fatal(err)
+	}
+	// Send a request.
+	dres, err := mob.Send[examples.DummyRequest, examples.DummyResponse](ctx, examples.DummyRequest{ID: "997"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(dres)
 
 	// Register a LogEventHandler to the global mob instance.
-	if err := mob.RegisterEventHandler[LogEvent](LogEventHandler{}); err != nil {
+	if err := mob.RegisterEventHandler[examples.LogEvent](examples.LogEventHandler{}); err != nil {
 		log.Fatal(err)
 	}
 	// Notify an occurance of an event.
-	if err := mob.Notify[LogEvent](ctx, "Hello world!"); err != nil {
+	if err := mob.Notify[examples.LogEvent](ctx, "Hello world!"); err != nil {
 		log.Fatal(err)
 	}
 }

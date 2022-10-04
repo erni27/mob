@@ -2,14 +2,21 @@ package mob
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 )
 
 // EventHandler provides an interface for an event handler.
 type EventHandler[T any] interface {
-	Named
 	Handle(context.Context, T) error
+}
+
+// EventHandlerFunc type is an adapter to allow the use of ordinary functions as event handlers.
+type EventHandlerFunc[T any] func(context.Context, T) error
+
+func (f EventHandlerFunc[T]) Handle(ctx context.Context, event T) error {
+	return f(ctx, event)
 }
 
 // EventNotifier is the interface that wraps the mob's Notify method.
@@ -37,16 +44,20 @@ func (nf *notifier[T]) Notify(ctx context.Context, event T) error {
 		return ErrHandlerNotFound
 	}
 	n := len(hns)
-	c := make(chan HandlerError)
+	c := make(chan error)
 	var wg sync.WaitGroup
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
+			hn := hns[i]
 			// Dispatching result not checked because if a handler is found then it should always satisfy EventHandler[T] interface.
-			dhn, _ := hns[i].(EventHandler[T])
+			dhn, _ := hn.embedded.(EventHandler[T])
 			if err := dhn.Handle(ctx, event); err != nil {
-				c <- HandlerError{Handler: dhn.Name(), Err: err}
+				if hn.name != "" {
+					err = fmt.Errorf("%s: %w", hn.name, err)
+				}
+				c <- err
 			}
 		}(i)
 	}
@@ -54,7 +65,7 @@ func (nf *notifier[T]) Notify(ctx context.Context, event T) error {
 		wg.Wait()
 		close(c)
 	}()
-	var aggr AggregateHandlerError = make([]HandlerError, 0, n)
+	var aggr AggregateHandlerError = make([]error, 0, n)
 	for err := range c {
 		aggr = append(aggr, err)
 	}
@@ -68,12 +79,16 @@ func (nf *notifier[T]) Notify(ctx context.Context, event T) error {
 // Returns nil if the handler added successfully, an error otherwise.
 //
 // Multiple event handlers can be registered for a single event's type.
-func RegisterEventHandlerTo[T any](m *Mob, hn EventHandler[T]) error {
-	if !isValid(hn) {
+func RegisterEventHandlerTo[T any](m *Mob, ehn EventHandler[T], opts ...Option) error {
+	if !isValid(ehn) {
 		return ErrInvalidHandler
 	}
 	var ev T
 	k := reflect.TypeOf(ev)
+	hn := &handler{embedded: ehn}
+	for _, opt := range opts {
+		opt.apply(hn)
+	}
 	m.ehandlers[k] = append(m.ehandlers[k], hn)
 	return nil
 }
@@ -82,8 +97,8 @@ func RegisterEventHandlerTo[T any](m *Mob, hn EventHandler[T]) error {
 // Returns nil if the handler added successfully, an error otherwise.
 //
 // Multiple event handlers can be registered for a single event's type.
-func RegisterEventHandler[T any](hn EventHandler[T]) error {
-	return RegisterEventHandlerTo(m, hn)
+func RegisterEventHandler[T any](hn EventHandler[T], opts ...Option) error {
+	return RegisterEventHandlerTo(m, hn, opts...)
 }
 
 // Notify dispatches a given event and execute all handlers registered with a dispatched event's type.
