@@ -97,7 +97,7 @@ It's recommended to register a handler with a meaningful name. `WithName` is use
 err := mob.RegisterEventHandler[LogEvent](LogEventHandler{}, mob.WithName("LogEventHandler"));
 ```
 
-It helps debugging potential issues. Exteremely useful when multiple event handlers are registered to the specific subject and there is a need to communicate which handler fails. `mob` prefixes all errors by a handler's name if configured.
+It helps debugging potential issues. Extremely useful when multiple event handlers are registered to the specific subject and there is a need to communicate which handler fails. `mob` prefixes all errors by a handler's name if configured.
 
 ## Register ordinary functions as handlers
 
