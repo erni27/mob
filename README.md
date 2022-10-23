@@ -7,7 +7,7 @@
 [![Coverage Status](https://codecov.io/gh/erni27/mob/branch/master/graph/badge.svg)](https://codecov.io/gh/erni27/mob)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
 
-`mob` is a generic-based, simple **m**ediator / **ob**server library.
+`mob` is a generic-based, simple **m**ediator / **ob**server (event aggregator) library.
 
 It supports in-process requests / events processing.
 
@@ -52,6 +52,20 @@ response, err := mob.Send[DummyRequest, DummyResponse](ctx, req)
 ```
 
 If a handler does not exist for a given request - response pair - `ErrHandlerNotFound` is returned.
+
+## Interceptors
+
+The processing can get complex, especially when building large, enterprise systems. It's necessary to add many cross-cutting concerns like logging, monitoring, validations or security. To make it simple, `mob` supports `Interceptor`s. `Interceptor`s allow to intercept an invocation of `Send` method so they offer a way to enrich the request-response processing pipeline (basically apply decorators).
+
+`Interceptor`s can be added to `mob` by calling `AddInterceptor` method.
+
+```go
+mob.AddInterceptor(LoggingInterceptor)
+```
+
+`Interceptor`s are invoked in order they're added to the chain.
+
+For more information on how to create and use `Interceptor`s, see the [example](https://github.com/erni27/mob/blob/master/examples/interceptor/main.go).
 
 ## Event handlers
 
@@ -221,6 +235,12 @@ In order to notify an occurance of an event create an `EventNotifier` tied to a 
 
 ```go
 err := mob.NewEventNotifier[LogEvent](m).Notify(ctx, "Hello world!")
+```
+
+To add an `Interceptor` to a standalone mob instance call the `AddInterceptorTo` method.
+
+```go
+mob.AddInterceptorTo(m, LoggingInterceptor)
 ```
 
 `mob` package keep track only of the global mob instance. It means that users are responsible for keeping track of the multiple, standalone mob instances.

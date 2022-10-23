@@ -5,7 +5,7 @@ import (
 )
 
 // SendInvoker is a function called by an Interceptor to invoke
-// the next Interceptor in the chain or the underlying Send invoker.
+// the next Interceptor in the chain or the underlying invoker.
 type SendInvoker func(ctx context.Context, req interface{}) (interface{}, error)
 
 // Interceptor intercepts an invocation of a Send method.
