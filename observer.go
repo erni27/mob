@@ -9,11 +9,11 @@ import (
 
 // EventHandler provides an interface for an event handler.
 type EventHandler[T any] interface {
-	Handle(context.Context, T) error
+	Handle(ctx context.Context, event T) error
 }
 
 // EventHandlerFunc type is an adapter to allow the use of ordinary functions as event handlers.
-type EventHandlerFunc[T any] func(context.Context, T) error
+type EventHandlerFunc[T any] func(ctx context.Context, event T) error
 
 func (f EventHandlerFunc[T]) Handle(ctx context.Context, event T) error {
 	return f(ctx, event)
@@ -25,7 +25,7 @@ type EventNotifier[T any] interface {
 	// Handlers are executed concurrently and errors are collected, if any, they're returned to the client.
 	//
 	// If there is no appropriate handler in the notifier's Mob instance, ErrHandlerNotFound is returned.
-	Notify(context.Context, T) error
+	Notify(ctx context.Context, event T) error
 }
 
 // NewEventNotifier returns an event notifier which uses a given Mob instance.
